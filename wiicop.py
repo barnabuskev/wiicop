@@ -7,6 +7,7 @@ import errno
 import select
 import sys
 import os
+import time
 from subprocess import run
 import numpy as np
 from scipy import stats
@@ -155,7 +156,9 @@ run('clear')
 # connect to balance board and exit if none connected
 bb = connectBB()
 if bb==None:
-    sys.exit('Exiting')
+    time.sleep(5)
+    print('Exiting')
+    sys.exit()
 
 
 # SELECT STUDY
@@ -196,7 +199,9 @@ def_name = tmnow.strftime("%b_%d_%Y_%p")
 s_dir_nm = get_sessionname(prev_sesh,def_name)
 # check if session dir already exists
 if s_dir_nm in prev_sesh:
-    sys.exit('Session already exists. Start again and choose another name')
+    print('Session already exists. Start again and choose another name')
+    time.sleep(5)
+    sys.exit()
 # session path
 sesh_path = os.path.join(std_dir,s_dir_nm)
 # create directory
@@ -226,7 +231,9 @@ for i_ws in range(n_calib):
         if prctzero > maxpcnt:
             print('Error: percentage zeros for {0} sensor exceeds maximum ({1:.2f}%).'.format(SENS_DCT[i_s],prctzero))
             print('Use heavier weight or move board to another location.')
-            sys.exit('Exiting')
+            print('Exiting')
+            time.sleep(5)
+            sys.exit()
         else:
             # get zscores for sensor
             zscrs = stats.zscore(sens_dat1)
