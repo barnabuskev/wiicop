@@ -58,80 +58,91 @@ BB_X = 433
 class acq_object:
     'object to implement plotting data in animation loop, storage and saving data'
 
+    # This function initializes the necessary variables to calculate the COP (center of pressure)
+    # aqc_info: dictionary of acquisition specific info
+    # sesh_path: path to session directory
+    # bb: a pyudev device object for balance board
+    # cal_mod: calibration model
     def __init__(self,aqc_info,sesh_path,bb,cal_mod):
-        # aqc_info: dictionary of acquisition specific info
-        # sesh_path: path to session directory
-        # bb: a pyudev device object for balance board
-        # cal_mod: calibration model
-        # create new variables and arrays
+
         # create numpy array to store data initially from board
         self.tmp_dat = np.empty((1,N_S))
-        # create numpy array to accumulate raw sensor_data
         self.sens_dat = np.empty((0,N_S))
-        # create numpy array to store sensor acq time data
         self.time_dat = np.empty((0,2))
-        # create numpy array to store COP data
         self.cop_dat = np.empty((0,2))
+        
         # store session path
         self.sesh_path = sesh_path
-        # create var to store save start time
+        
+        # create var to store start and end time
         save_start = 0
-        # create var to store save end time
         save_end = 0
-        # set save data to file flag
+        
+        # set save data to file and array flag
         self.savedatf = False
-        # set store data to array flag
         self.storedat = False
+        
         # input acquisition info
         self.acq_info = aqc_info
-        # create polling object
+        
+        #initializing wii and poll objects
         self.p_obj = select.poll()
-        # create xwiimote bboard device
         self.bbdev = xwiimote.iface(bb.sys_path)
+        
         # register bbdev to pollong object
         self.p_obj.register(self.bbdev.get_fd(), select.POLLIN)
         # open bb device
         self.bbdev.open(xwiimote.IFACE_BALANCE_BOARD)
+        
         # event structure
         self.revt = xwiimote.event()
         # calibration model
         self.cal_mod = cal_mod
-
+    
+    
     def animate(self,cop_i):
         polls = self.p_obj.poll()
         for fd, evt in polls:
             try:
                 self.bbdev.dispatch(self.revt)
+                
                 # read each sensor
                 for i_s in range(N_S):
                     # get the 'x' data from the Absolute Motion Payload for each sensor
                     self.tmp_dat[0,i_s] = self.revt.get_abs(i_s)[0]
-                # get COP
+                
+                # get COP (center of pressure)
                 cop_p = calcCOP(self.tmp_dat,self.cal_mod,BB_X,BB_Y)
-                # plot cop
+
+                # plot COP
                 scat.set_offsets(cop_p)
+
                 if self.storedat:
+                    
                     # save data in arrays...
-                    # cop data
                     self.cop_dat = np.vstack((self.cop_dat,cop_p))
-                    # event time
                     self.time_dat = np.vstack((self.time_dat,np.array(self.revt.get_time())))
-                    # raw sensor data
                     self.sens_dat = np.vstack((self.sens_dat,self.tmp_dat))
+                    
             except IOError as e:
-                # do nothing if resource unavailable
+                
+                # if resource unavailable do nothing
                 if e.errno != errno.EAGAIN:
                     print(e)
+                    
+    # This is called to put data in dictionary & save as a pickled binary file
     def save_bbdat(self):
-        # called to put data in dictionary & save as a pickled binary file
+
         bbdat = {'rawsens':self.sens_dat,'timedat':self.time_dat,'cop':self.cop_dat}
         # get save file name...
         sfn = self.aqc_name()+'.dat'
         sfn = os.path.join(self.sesh_path,sfn)
         with open(sfn,'wb') as fptr:
             pickle.dump(bbdat,fptr)
+
+    # This is returns a string for labelling acquisition and for file name
     def aqc_name(self):
-        # returns a string for labelling acquisition and for file name
+
         tmp = self.acq_info.copy()
         afn = 'subj'
         afn = afn+tmp.pop('subject_code')
@@ -141,11 +152,17 @@ class acq_object:
         if acqt!='inf':
             afn = afn+'_'+acqt
         return afn
+    
+    # This closes the device
     def shutdown(self):
-        # close device
+        
         self.bbdev.close(xwiimote.IFACE_BALANCE_BOARD)
         self.p_obj.unregister(self.bbdev.get_fd())
 
+
+# ~~~~~~~~~~~~~~~
+# MAIN ROUTINE
+# ~~~~~~~~~~~~~~~
 
 # to suppress the annoying warning
 import warnings
@@ -164,14 +181,14 @@ if bb==None:
 # SELECT STUDY
 # ~~~~~~~~~~~~
 # select study and read config file
-# get current script dir
+# get directories
 script_dir = os.path.dirname(os.path.realpath(__file__))
-# get config directory
 config_dir = os.path.join(script_dir,'config_files')
+
 # Get list of config files in config_dir
 config_files_t = os.listdir(config_dir)
-# select config files using list comprehension
 config_files = [x for x in config_files_t if '.config' in x]
+
 # use config parser to read each config file for names of study
 s_names = list()
 config_tmp = configparser.ConfigParser()
@@ -179,29 +196,36 @@ for i_f in config_files:
     cf = os.path.join(config_dir,i_f)
     config_tmp.read(cf)
     s_names.append(config_tmp['study info']['study_name'])
+
 # user interface to get user selection
 del(config_tmp)
 chc = txtmenu('Select study',s_names)
+
 # read selected config file
 config = configparser.ConfigParser()
 config.read(os.path.join(config_dir,config_files[chc]))
+
 
 # SETUP SESSION
 # ~~~~~~~~~~~~~
 # get path of study directory
 std_dir = config['study info']['study_dir']
+
 # get path of session directory...
 # read all names of all sessions in study directory
 prev_sesh = listdirs(std_dir)
+
 # default name for session
 tmnow = datetime.now()
 def_name = tmnow.strftime("%b_%d_%Y_%p")
 s_dir_nm = get_sessionname(prev_sesh,def_name)
+
 # check if session dir already exists
 if s_dir_nm in prev_sesh:
     print('Session already exists. Start again and choose another name')
     time.sleep(5)
     sys.exit()
+
 # session path
 sesh_path = os.path.join(std_dir,s_dir_nm)
 # create directory
@@ -241,6 +265,7 @@ for i_ws in range(n_calib):
             sens_dat1[np.absolute(zscrs) > out_thresh] = np.nan
             # get mean excluding nans.
             sens_mean[i_s,i_ws] = np.nanmean(sens_dat1)
+
 # For each sensor get a linear model to calibrate data...
 # create dictionary to store results to file and array for model parameters
 # 'm'-slopes,'c'-intercepts, 'p'-p-values, 'r'- r values, 'se' -standard errors
@@ -251,63 +276,80 @@ cal_dat = dict()
 dc = dict()
 for i_s in range(N_S):
     cal_m, cal_c, cal_r, cal_p, cal_se = stats.linregress(sens_mean[i_s,:],calib_wgts.values/N_S)
+    
     # store results to dictionary
     dc.update({'m':cal_m})
     dc.update({'c':cal_c})
     dc.update({'r':cal_r})
     dc.update({'p':cal_p})
     dc.update({'se':cal_se})
+
     # store model parameters to an array
     cal_mod[0,i_s] = cal_m
     cal_mod[1,i_s] = cal_c
     cal_dat.update({SENS_DCT[i_s]:dc})
+
 # save calibration data in session directory
 calib_dat = {'model':cal_mod, 'details':cal_dat}
 cfn = os.path.join(sesh_path,'calibration_dat')
 with open(cfn,'wb') as fptr:
     pickle.dump(calib_dat,fptr)
 print('Remove calibration weights from balance board\n\n')
+
 ##TEST overide calibration
 #cal_mod = np.array([[0.01776906,0.01645395,0.02366412,0.02252513],[ 0.39208467,-0.7261971,-0.05245845,-3.55288195]])
 
 
 # GET SERIES OF ACQUISITIONS
 loop_flag = True
+
 while loop_flag:
+
     # Get acquisition info
     # {'group': 'case', 'acq_time': 'inf', 'subject_code': '121', 'epoch': 'before'}
     acq_info = get_acq_info(config)
+    
     # get acquisition time in milliseconds if timed
     if acq_info['acq_time'] != 'inf':
         acq_time_ms = int(acq_info['acq_time'])*1000
+    
     # create acq_object instance
     acqobj = acq_object(acq_info,sesh_path,bb,cal_mod)
+    
     # CREATE WINDOW
     # Initial instructions
     text_start = 'Press Spacebar to start recording'
     text_stop = 'Press Spacebar to stop recording'
+    
     # remove toolbar
     mpl.rcParams['toolbar'] = 'None'
+    
     # Create new figure and an axes which fills it...
     # set figure width in inches
     fig_width = 12
+    
     # set fig ratio based on size of bboard rectange whose corners are sensors
     fig = plt.figure(figsize=(fig_width, fig_width*BB_Y/BB_X))
     fig.canvas.set_window_title(acqobj.aqc_name())
+    
     # frameon determines whether background of frame will be drawn
     ax = fig.add_axes([0, 0, 1, 1], frameon=False)
     ax.set_xlim(-BB_X/2, BB_X/2), ax.set_xticks([])
     ax.set_ylim(-BB_Y/2, BB_Y/2), ax.set_yticks([])
+    
     # create a scatter object at initial position 0,0
     cop_x = 0
     cop_y = 0
     scat = ax.scatter(cop_x, cop_x, s=200, lw=0.5, facecolors='green')
+    
     # create text box
     text_h = ax.text(0.02, 0.98, text_start, verticalalignment='top',horizontalalignment='left',
      transform=ax.transAxes, fontsize=12, bbox=dict(facecolor='white'), gid = 'notrec')
-    # define keypress event handler
+    
+    # DEFINING KEYPRESS EVENT HANDLER
     def onkeypress(evt):
         if evt.key==' ':
+            
             # spacebar pressed
             if text_h.get_gid()=='notrec':
                 # not recording data...
@@ -328,7 +370,9 @@ while loop_flag:
                     text_h.set_text(text_stop)
                     # set acquisition object to store data in array
                     acqobj.storedat = True
+            
             elif text_h.get_gid()=='rec':
+            
                 if acq_info['acq_time'] != 'inf':
                     # timed acq - do nothing
                     pass
@@ -339,21 +383,26 @@ while loop_flag:
                     plt.close()
             else:
                 print('error in onkeypress - unrecognised text_h gid')
+                
     def t_event():
         # callback function for timer
         acqobj.storedat = False
         acqobj.savedatf = True
         acq_timer.remove_callback(t_event)
         plt.close()
+    
     # create timer object
     if acq_info['acq_time'] != 'inf':
         acq_timer = fig.canvas.new_timer(interval=acq_time_ms)
         acq_timer.add_callback(t_event)
+    
     # attach keypress event handler to figure canvas
     cid = fig.canvas.mpl_connect('key_press_event', onkeypress)
+    
     # PLOT ANIMATION - interval can't be too small or it gives an attribute error
     animation = FuncAnimation(fig, acqobj.animate, interval=anim_interval)
     plt.show()
+    
     # save data if flag = True
     print(acqobj.savedatf)
     if acqobj.savedatf:
@@ -362,8 +411,10 @@ while loop_flag:
         print('  Data has been saved in file {}\n'.format(acqobj.aqc_name()+'.dat'))
     else:
         print('\nNo data has been saved in this acquisition\n')
+    
     # shutdown devices
     acqobj.shutdown()
+    
     # ask user if they wish to do another acquisition
     chc = input('Get another acquisition? (y/n)\n')
     if chc in ['y','Y']:
