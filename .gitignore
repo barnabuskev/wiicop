@@ -1,3 +1,4 @@
 # ignore the __pycache__ directory
 /__pycache__/*
-
+# any test files
+test*.py
