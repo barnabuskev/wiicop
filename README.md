@@ -1,6 +1,6 @@
 # wiicop.py
 
-Python 3 software for obtaining centre of pressure data from the Nintendo Wii board
+Python 3 software for obtaining centre of pressure data from the Nintendo Wii board. Works on linux computers only. Also obtains subject code and experiment factors such as group (case/control), acquisition time etc.
 
 
 ##INSTALL INSTRUCTIONS
