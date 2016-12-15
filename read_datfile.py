@@ -3,9 +3,12 @@
 import tkinter.filedialog as tk_fd
 import pickle
 import numpy as np
+import sys
 
-dfile = tk_fd.askopenfilename(title = 'Get pickled data file',filetypes=[('Data files', '*.dat'),
- ('All files','*')])
+dfile = tk_fd.askopenfilename(title = 'Get pickled data file',filetypes=[('Data files', '*.dat'), ('All files','*')])
+if not dfile:
+    print('No file chosen')
+    sys.exit(0)
 with open(dfile,'rb') as fptr:
     dc = pickle.load(fptr, fix_imports=False)
 # convert time data into seconds
