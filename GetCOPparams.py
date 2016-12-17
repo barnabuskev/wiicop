@@ -12,35 +12,54 @@
 
 # IMPORTS
 # ~~~~~~~
-import numpy as np
-from scipy import stats
+import tkinter.filedialog as tk_fd
+import sys
+import os
+import re
+import pickle
+import pandas
 import matplotlib.pyplot as plt
 # %matplotlib inline
 # next line assumes hyperellipsoid.py is in same directory
 from hyperellipsoid import hyperellipsoid
-from tkinter import *
 
-# DEFINITIONS
-# ~~~~~~~~~~~
 
-# GET FILES TO READ
-# ~~~~~~~~~~~~~~~~~
+# INITIALISE
+# set regular expression to find calibration file
+cal_re = "calib.*dat"
+# set regular expression to find cop data file
+cop_re = "subj.*.dat"
 
-# GET USER TO CHOOSE COP PARAMETERS
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-cop_params = ['95% prediction interval', 'path length']
-root = Tk()
-root.title('Choose parameters to calculate')
-lb = Listbox(root, selectmode=MULTIPLE)
-for choice in cop_params:
-    lb.insert(END, choice)
-lb.pack()
-#butt = Button(root, text='OK', command=select_all)
-#butt.pack()
-root.mainloop()
+# setup regular expressions
+cal_re_o = re.compile(cal_re)
+cop_re_o = re.compile(cop_re)
 
-# test data
-y = np.cumsum(np.random.randn(3000)) / 50
-x = np.cumsum(np.random.randn(3000)) / 100
-# calculate ellipsoid parameters
-area, axes, angles, center, R = hyperellipsoid(x, y, units='cm', show=True)
+# SEARCH THROUGH CHOSEN DIRECTORY STRUCTURE
+seshd = tk_fd.askdirectory(title = 'Open study directory containing sessions')
+if not seshd:
+    sys.exit()
+tst = os.walk(seshd)
+for root, dirs, files in os.walk(seshd):
+    # for each directory level
+    if len(files) > 0:
+        # do stuff with files...
+        # look for calibration file using reg expression
+        c_lst = list(filter(cal_re_o.match,files))
+        if c_lst:
+            # if list c_lst is not empty..
+            # should contain only one file name
+            assert len(c_lst)==1
+            # open calibration file
+            c_pth = os.path.join(root,c_lst[0])
+            with open(c_pth,'rb') as fptr:
+                cal_dat = pickle.load(fptr, fix_imports=False)
+            print(cal_dat['details'])
+        # look for cop data file using reg expression
+        d_lst = list(filter(cop_re_o.match,files))
+        if d_lst:
+            # if list d_lst is not empty..
+            # print(d_lst)
+            pass
+    if len(dirs) > 0:
+        # do stuff with directories?
+        pass

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# to read a pickled file into memory
+# to read calibration data and store it as a readable text file
 import tkinter.filedialog as tk_fd
 import pickle
 import numpy as np
@@ -12,4 +12,4 @@ if not dfile:
     sys.exit(0)
 with open(dfile,'rb') as fptr:
     dc = pickle.load(fptr, fix_imports=False)
-print(dc['details'])
+print(dc)
