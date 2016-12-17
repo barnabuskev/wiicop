@@ -17,7 +17,7 @@ import sys
 import os
 import re
 import pickle
-import pandas
+import pandas as pd
 import matplotlib.pyplot as plt
 # %matplotlib inline
 # next line assumes hyperellipsoid.py is in same directory
@@ -34,7 +34,13 @@ cop_re = "subj.*.dat"
 cal_re_o = re.compile(cal_re)
 cop_re_o = re.compile(cop_re)
 
+# create empty pandas dataframes to store calibration and cop data
+cal_df=pd.DataFrame(columns=['session','sensor','slope','slope.se','r.coef','p-val'])
+# NEED TO READ IN CONFIG FILE BEFORE DOING THIS ***
+cop_df=pd.DataFrame(columns=['study','sensor','slope','slope.se','r.coef','p-val'])
+
 # SEARCH THROUGH CHOSEN DIRECTORY STRUCTURE
+# for data and calibration files
 seshd = tk_fd.askdirectory(title = 'Open study directory containing sessions')
 if not seshd:
     sys.exit()
@@ -48,18 +54,16 @@ for root, dirs, files in os.walk(seshd):
         if c_lst:
             # if list c_lst is not empty..
             # should contain only one file name
-            assert len(c_lst)==1
+            assert len(c_lst)==1, "more than one calibration file in directory: {}".format(root)
             # open calibration file
             c_pth = os.path.join(root,c_lst[0])
             with open(c_pth,'rb') as fptr:
                 cal_dat = pickle.load(fptr, fix_imports=False)
+            # DO SOMETHING WITH CALIB DATA HERE ***
             print(cal_dat['details'])
         # look for cop data file using reg expression
         d_lst = list(filter(cop_re_o.match,files))
         if d_lst:
             # if list d_lst is not empty..
-            # print(d_lst)
+            # DO SOMETHING WITH DATA FILES HERE ***
             pass
-    if len(dirs) > 0:
-        # do stuff with directories?
-        pass
