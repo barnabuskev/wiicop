@@ -37,7 +37,7 @@ cop_re_o = re.compile(cop_re)
 # create empty pandas dataframes to store calibration and cop data
 cal_df=pd.DataFrame(columns=['session','sensor','slope','slope.se','r.coef','p-val'])
 # NEED TO READ IN CONFIG FILE BEFORE DOING THIS ***
-cop_df=pd.DataFrame(columns=['study','sensor','slope','slope.se','r.coef','p-val'])
+# cop_df=pd.DataFrame(columns=['session','subj','factor1','factor2','cop_param1','cop_param2'])
 
 # SEARCH THROUGH CHOSEN DIRECTORY STRUCTURE
 # for data and calibration files
@@ -58,9 +58,15 @@ for root, dirs, files in os.walk(seshd):
             # open calibration file
             c_pth = os.path.join(root,c_lst[0])
             with open(c_pth,'rb') as fptr:
-                cal_dat = pickle.load(fptr, fix_imports=False)
+                tmp = pickle.load(fptr, fix_imports=False)
             # DO SOMETHING WITH CALIB DATA HERE ***
-            print(cal_dat['details'])
+            cal_dat = tmp['details']
+            nxti = len(cal_df.index)
+            # cal_df=pd.DataFrame(columns=['session','sensor','slope','slope.se','r.coef','p-val'])
+            # create row
+            cal_df.loc[nxti] = None
+            cal_df[nxti,'session'] = root
+            print(cal_df)
         # look for cop data file using reg expression
         d_lst = list(filter(cop_re_o.match,files))
         if d_lst:
