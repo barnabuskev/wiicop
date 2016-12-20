@@ -18,6 +18,7 @@ import os
 import re
 import pickle
 import pandas as pd
+import configparser
 import matplotlib.pyplot as plt
 # %matplotlib inline
 # next line assumes hyperellipsoid.py is in same directory
@@ -29,6 +30,8 @@ from hyperellipsoid import hyperellipsoid
 cal_re = "calib.*dat"
 # set regular expression to find cop data file
 cop_re = "subj.*.dat"
+# specify list of cop parameters
+cop_params = ['pred_ellipse','path_length']
 
 # setup regular expression objects
 cal_re_o = re.compile(cal_re)
@@ -36,8 +39,15 @@ cop_re_o = re.compile(cop_re)
 
 # create empty pandas dataframes to store calibration and cop data
 cal_df=pd.DataFrame(columns=['session','sensor','slope','slope.se','r.coef','p-val'])
-# NEED TO READ IN CONFIG FILE BEFORE DOING THIS ***
-# cop_df=pd.DataFrame(columns=['session','subj','factor1','factor2','cop_param1','cop_param2'])
+# Get user to choose config file
+config_file = tk_fd.askopenfilename(title = 'Get config file for study',filetypes=[('Data files', '*.config'), ('All files','*')])
+# read selected config file
+config = configparser.ConfigParser()
+config.read(config_file)
+# get info list of factors
+fct_lst = config.options('factors')
+cop_df=pd.DataFrame(columns=['session','subj'] + fct_lst + cop_params)
+#print(cop_df)
 
 # SEARCH THROUGH CHOSEN DIRECTORY STRUCTURE
 # for data and calibration files
@@ -80,7 +90,13 @@ for root, dirs, files in os.walk(seshd):
         if d_lst:
             # if list d_lst is not empty..
             # DO SOMETHING WITH DATA FILES HERE ***
-            pass
+            for fi in d_lst:
+                # for each data file..
+                # strip extension
+                prts = fi.split('.')
+                # save levels as list
+                lev_lst = prts[0].split('_')
+                print(lev_lst)
 # write results to files
 res_dir = os.path.join(seshd,'results')
 if not(os.path.isdir(res_dir)):
