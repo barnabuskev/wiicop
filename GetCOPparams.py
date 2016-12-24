@@ -32,6 +32,8 @@ cal_re = "calib.*dat"
 cop_re = "subj.*.dat"
 # specify list of cop parameters
 cop_params = ['pred_ellipse','path_length']
+# string that signifies subject code
+sbjstr = 'subj'
 
 # setup regular expression objects
 cal_re_o = re.compile(cal_re)
@@ -47,7 +49,6 @@ config.read(config_file)
 # get info list of factors
 fct_lst = config.options('factors')
 cop_df=pd.DataFrame(columns=['session','subj'] + fct_lst + cop_params)
-#print(cop_df)
 
 # SEARCH THROUGH CHOSEN DIRECTORY STRUCTURE
 # for data and calibration files
@@ -70,21 +71,19 @@ for root, dirs, files in os.walk(seshd):
                 tmp = pickle.load(fptr, fix_imports=False)
             # DO SOMETHING WITH CALIB DATA HERE ***
             cal_dat = tmp['details']
-            nxti = len(cal_df.index)
+            nxt_cal = len(cal_df.index)
             s_ind = 0
             for sns in cal_dat.keys():
                 # for each sensor..
                 # create empty row
-                cal_df.loc[nxti+s_ind] = None
-                # get session directory
-                cal_df.ix[nxti+s_ind,'session'] = os.path.basename(root)
-                cal_df.ix[nxti+s_ind,'sensor'] = sns
-                cal_df.ix[nxti+s_ind,'slope'] = cal_dat[sns]['m']
-                cal_df.ix[nxti+s_ind,'slope.se'] = cal_dat[sns]['se']
-                cal_df.ix[nxti+s_ind,'r.coef'] = cal_dat[sns]['r']
-                cal_df.ix[nxti+s_ind,'p-val'] = cal_dat[sns]['p']
+                cal_df.loc[nxt_cal+s_ind] = None
+                cal_df.ix[nxt_cal+s_ind,'session'] = os.path.basename(root)
+                cal_df.ix[nxt_cal+s_ind,'sensor'] = sns
+                cal_df.ix[nxt_cal+s_ind,'slope'] = cal_dat[sns]['m']
+                cal_df.ix[nxt_cal+s_ind,'slope.se'] = cal_dat[sns]['se']
+                cal_df.ix[nxt_cal+s_ind,'r.coef'] = cal_dat[sns]['r']
+                cal_df.ix[nxt_cal+s_ind,'p-val'] = cal_dat[sns]['p']
                 s_ind+=1
-            #cal_df.ix[nxti,'sensor'] =
         # look for cop data file using reg expression
         d_lst = list(filter(cop_re_o.match,files))
         if d_lst:
@@ -92,12 +91,25 @@ for root, dirs, files in os.walk(seshd):
             # DO SOMETHING WITH DATA FILES HERE ***
             for fi in d_lst:
                 # for each data file..
+                nxt_cop = len(cop_df.index)
+                # create empty row
+                cop_df.loc[nxt_cop] = None
                 # strip extension
                 prts = fi.split('.')
                 # save levels as list
                 lev_lst = prts[0].split('_')
-                print(lev_lst)
+                # get subject code
+                tmp = [s for s in lev_lst if sbjstr in s]
+                scode = tmp[0].strip(sbjstr)
+                # convert to int then back to string with 3 leading zeros
+                scode = int(scode)
+                scode = str(scode).zfill(3)
+                cop_df.ix[nxt_cop,'subj'] = scode
+                # get session
+                
 # write results to files
+# TEST
+print(cop_df)
 res_dir = os.path.join(seshd,'results')
 if not(os.path.isdir(res_dir)):
     os.mkdir(res_dir)
