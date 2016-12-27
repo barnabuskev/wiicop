@@ -50,6 +50,7 @@ config.read(config_file)
 fct_lst = config.options('factors')
 cop_df=pd.DataFrame(columns=['session','subj'] + fct_lst + cop_params)
 
+
 # SEARCH THROUGH CHOSEN DIRECTORY STRUCTURE
 # for data and calibration files
 seshd = tk_fd.askdirectory(title = 'Open study directory containing sessions')
@@ -106,10 +107,17 @@ for root, dirs, files in os.walk(seshd):
                 scode = str(scode).zfill(3)
                 cop_df.ix[nxt_cop,'subj'] = scode
                 # get session
-                
+                cop_df.ix[nxt_cop,'session'] = os.path.basename(root)
+                # read study metadata into df
+                for fct_i in fct_lst:
+                    for lev in lev_lst:
+                        if lev in config['factors'][fct_i]:
+                            cop_df.ix[nxt_cop,fct_i] = lev
+                # DO COP PROCESSING HERE
+
 # write results to files
 # TEST
-print(cop_df)
+print(cop_df.sort_values(['subj','side','trials']))
 res_dir = os.path.join(seshd,'results')
 if not(os.path.isdir(res_dir)):
     os.mkdir(res_dir)
