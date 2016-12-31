@@ -17,9 +17,11 @@ import sys
 import os
 import re
 import pickle
+import numpy as np
 import pandas as pd
 import configparser
 import matplotlib.pyplot as plt
+import matplotlib
 # %matplotlib inline
 # next line assumes hyperellipsoid.py is in same directory
 from hyperellipsoid import hyperellipsoid
@@ -34,6 +36,15 @@ cop_re = "subj.*.dat"
 cop_params = ['pred_ellipse','path_length']
 # string that signifies subject code
 sbjstr = 'subj'
+# flag displays
+disp_g = True
+# Balance board dimensions width and length in mm (Leach, J.M., Mancini, M., Peterka, R.J., Hayes,
+# T.L. and Horak, F.B., 2014. Validating and calibrating the Nintendo Wii
+# balance board to derive reliable center of pressure measures. Sensors,
+# 14(10), pp.18244-18267.)
+BB_Y = 238
+BB_X = 433
+matplotlib.rcParams['toolbar'] = 'None'
 
 # setup regular expression objects
 cal_re_o = re.compile(cal_re)
@@ -90,6 +101,11 @@ for root, dirs, files in os.walk(seshd):
         if d_lst:
             # if list d_lst is not empty..
             # DO SOMETHING WITH DATA FILES HERE ***
+            # prepare plotting if flagged
+            if disp_g:
+                plt.axis([-BB_X/2, BB_X/2, -BB_Y/2, BB_Y/2])
+                plot1 = True
+                plt.ion()
             for fi in d_lst:
                 # for each data file..
                 nxt_cop = len(cop_df.index)
@@ -114,12 +130,34 @@ for root, dirs, files in os.walk(seshd):
                         if lev in config['factors'][fct_i]:
                             cop_df.ix[nxt_cop,fct_i] = lev
                 # DO COP PROCESSING HERE
-
-# write results to files
-# TEST
-print(cop_df.sort_values(['subj','side','trials']))
+                # read data
+                d_pth = os.path.join(root,fi)
+                with open(d_pth,'rb') as fptr:
+                    pkl = pickle.load(fptr)
+                # convert time data into seconds
+                t_dat = pkl['timedat']
+                t_dat = t_dat[:,0] + t_dat[:,1]/1000000
+                # reshape t_dat so that it is an nd array with one singleton dimension
+                t_dat = np.reshape(t_dat,(t_dat.size,-1))
+                # add time data to cop data
+                cop_dat = np.concatenate((pkl['cop'],t_dat), axis=1)
+                # display stabilogram (see Scoppa2013) if flagged
+                if disp_g:
+                    if plot1:
+                        line_h, = plt.plot(cop_dat[:,0], cop_dat[:,1],'b-')
+                        plot1 = False
+                    else:
+                        line_h.set_xdata(cop_dat[:,0])
+                        line_h.set_ydata(cop_dat[:,1])
+                    plt.show()
+                    plt.pause(0.5)
+# # TEST
+# print(cop_df.sort_values(['subj','side','trials']))
+# #
+# create results directory if it doesn't exist
 res_dir = os.path.join(seshd,'results')
 if not(os.path.isdir(res_dir)):
     os.mkdir(res_dir)
+# write results
 calib_file = os.path.join(res_dir,'calib_file.csv')
 cal_df.to_csv(calib_file)
