@@ -26,6 +26,8 @@ import matplotlib
 # next line assumes hyperellipsoid.py is in same directory
 from hyperellipsoid import hyperellipsoid
 
+# TEMP
+os.chdir("/home/kevin/Documents/Work/BSO/BSOEquip/WiiBalBoard/")
 
 # INITIALISE
 # set regular expression to find calibration file
@@ -44,7 +46,15 @@ disp_g = True
 # 14(10), pp.18244-18267.)
 BB_Y = 238
 BB_X = 433
-matplotlib.rcParams['toolbar'] = 'None'
+
+# set up if plots flagged
+if disp_g:
+    matplotlib.rcParams['toolbar'] = 'None'
+    # create empty list to store stuff to plot
+    plt_lst = []
+    # create figure and axis
+    fig,ax = plt.subplots(1)
+    fig.canvas.set_window_title('Stabilogram')
 
 # setup regular expression objects
 cal_re_o = re.compile(cal_re)
@@ -70,7 +80,7 @@ if not seshd:
 for root, dirs, files in os.walk(seshd):
     # for each directory
     if len(files) > 0:
-        # do stuff with files if dir contains any
+
         # look for calibration file using reg expression
         c_lst = list(filter(cal_re_o.match,files))
         if c_lst:
@@ -81,7 +91,8 @@ for root, dirs, files in os.walk(seshd):
             c_pth = os.path.join(root,c_lst[0])
             with open(c_pth,'rb') as fptr:
                 tmp = pickle.load(fptr, fix_imports=False)
-            # DO SOMETHING WITH CALIB DATA HERE ***
+
+            # Store 1 row of calibration data...
             cal_dat = tmp['details']
             nxt_cal = len(cal_df.index)
             s_ind = 0
@@ -96,18 +107,14 @@ for root, dirs, files in os.walk(seshd):
                 cal_df.ix[nxt_cal+s_ind,'r.coef'] = cal_dat[sns]['r']
                 cal_df.ix[nxt_cal+s_ind,'p-val'] = cal_dat[sns]['p']
                 s_ind+=1
+
         # look for cop data file using reg expression
         d_lst = list(filter(cop_re_o.match,files))
         if d_lst:
-            # if list d_lst is not empty..
-            # DO SOMETHING WITH DATA FILES HERE ***
-            # prepare plotting if flagged
-            if disp_g:
-                plt.axis([-BB_X/2, BB_X/2, -BB_Y/2, BB_Y/2])
-                plot1 = True
-                plt.ion()
             for fi in d_lst:
                 # for each data file..
+
+                # store row of study metadata...
                 nxt_cop = len(cop_df.index)
                 # create empty row
                 cop_df.loc[nxt_cop] = None
@@ -129,7 +136,8 @@ for root, dirs, files in os.walk(seshd):
                     for lev in lev_lst:
                         if lev in config['factors'][fct_i]:
                             cop_df.ix[nxt_cop,fct_i] = lev
-                # DO COP PROCESSING HERE
+
+                # Process COP data...
                 # read data
                 d_pth = os.path.join(root,fi)
                 with open(d_pth,'rb') as fptr:
@@ -141,17 +149,46 @@ for root, dirs, files in os.walk(seshd):
                 t_dat = np.reshape(t_dat,(t_dat.size,-1))
                 # add time data to cop data
                 cop_dat = np.concatenate((pkl['cop'],t_dat), axis=1)
-                # display stabilogram (see Scoppa2013) if flagged
+
+                # store data for plotting if flagged
                 if disp_g:
-                    if plot1:
-                        line_h, = plt.plot(cop_dat[:,0], cop_dat[:,1],'b-')
-                        plot1 = False
-                    else:
-                        line_h.set_xdata(cop_dat[:,0])
-                        line_h.set_ydata(cop_dat[:,1])
-                    plt.show()
-                    plt.pause(0.5)
+                    # create a dictionary of relevant study factors
+                    std_fct = {}
+                    std_fct['subj'] = scode
+                    for fct_i in fct_lst:
+                        for lev in lev_lst:
+                            if lev in config['factors'][fct_i]:
+                                std_fct[fct_i] = lev
+                    plt_lst.append([[cop_dat, std_fct]])
+
+# Plot stabilograms (see Scoppa2013) if flagged
+if disp_g:
+    ax.axis([-BB_X/2, BB_X/2, -BB_Y/2, BB_Y/2])
+    ax.grid()
+    plot1 = True
+    plt.ion()
+    for ia in plt_lst:
+        if plot1:
+            line_h, = ax.plot(ia[0][0][:,0], ia[0][0][:,1],'b-')
+            plot1 = False
+        else:
+            line_h.set_xdata(ia[0][0][:,0])
+            line_h.set_ydata(ia[0][0][:,1])
+        plt.title('Subject: '+ia[0][1]['subj'])
+        # get factors string
+        fct_str = ""
+        for ib in fct_lst:
+            fct_str = fct_str + ib + ": " + ia[0][1][ib]+", "
+        fct_str = fct_str.rstrip(", ")
+        txt_h = plt.text(-200,100,fct_str, fontsize=14)
+        plt.show()
+        plt.pause(0.5)
+        txt_h.remove()
+
 # # TEST
+# for tst in plt_lst:
+#     print(type(tst[0][0]))
+#     input('next...')
 # print(cop_df.sort_values(['subj','side','trials']))
 # #
 # create results directory if it doesn't exist
