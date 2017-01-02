@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # software to convert raw centre of pressure (COP) data into various COP based measures of balance
-# uses code and a module (hyperellipsoid.py) written by 'Marcos Duarte,
-# https://github.com/demotu/BMC' for calculating area of a 95% prediction
-# ellipse
+
 
 # TO DO
 # ask user to choose directory
@@ -22,11 +20,11 @@ import pandas as pd
 import configparser
 import matplotlib.pyplot as plt
 import matplotlib
+import COPparamsFs as cp
 # %matplotlib inline
-# next line assumes hyperellipsoid.py is in same directory
-from hyperellipsoid import hyperellipsoid
 
-# TEMP
+
+# TEMP**
 os.chdir("/home/kevin/Documents/Work/BSO/BSOEquip/WiiBalBoard/")
 
 # INITIALISE
@@ -38,23 +36,34 @@ cop_re = "subj.*.dat"
 cop_params = ['pred_ellipse','path_length']
 # string that signifies subject code
 sbjstr = 'subj'
-# flag displays
-disp_g = True
+# Display stabilogram flag
+disps_f = False
+# Save stabilogram flag
+saves_f = False
+# name of image directory
+imdir = "stabilograms"
 # Balance board dimensions width and length in mm (Leach, J.M., Mancini, M., Peterka, R.J., Hayes,
 # T.L. and Horak, F.B., 2014. Validating and calibrating the Nintendo Wii
 # balance board to derive reliable center of pressure measures. Sensors,
 # 14(10), pp.18244-18267.)
 BB_Y = 238
 BB_X = 433
+# filter parameters...
+# cutoff frequency as proportion of Nyquist
+cutoff = 2/3
+# order of Butterworth filter
+order = 4
 
 # set up if plots flagged
-if disp_g:
+if disps_f or saves_f:
     matplotlib.rcParams['toolbar'] = 'None'
     # create empty list to store stuff to plot
     plt_lst = []
     # create figure and axis
     fig,ax = plt.subplots(1)
     fig.canvas.set_window_title('Stabilogram')
+if saves_f:
+    os.mkdir(imdir)
 
 # setup regular expression objects
 cal_re_o = re.compile(cal_re)
@@ -137,8 +146,8 @@ for root, dirs, files in os.walk(seshd):
                         if lev in config['factors'][fct_i]:
                             cop_df.ix[nxt_cop,fct_i] = lev
 
-                # Process COP data...
-                # read data
+
+                # read COP data
                 d_pth = os.path.join(root,fi)
                 with open(d_pth,'rb') as fptr:
                     pkl = pickle.load(fptr)
@@ -150,8 +159,33 @@ for root, dirs, files in os.walk(seshd):
                 # add time data to cop data
                 cop_dat = np.concatenate((pkl['cop'],t_dat), axis=1)
 
+                # Calculate COP parameters...
+                # resample to even sample points
+                cop_dat_r = cp.resamp(cop_dat)
+                # low pass filtering
+                cop_dat_f = cp.bfilt(cop_dat_r, cutoff, order)
+                # # TEST ***
+                # # plot coronal
+                # fg, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+                # # resampled or raw
+                # ax1.plot(cop_dat[:,2],cop_dat[:,0],'bo-')
+                # # ax1.plot(t,cor,'bo-')
+                # ax1.set_xlabel('time (secs)')
+                # ax1.set_ylabel('coronal plane')
+                # ax1.set_title('Raw data')
+                # ax1.grid()
+                # # resampled and filtered
+                # ax2.plot(cop_dat_f[:,2],cop_dat_f[:,0],'bo-')
+                # ax2.set_xlabel('time (secs)')
+                # ax2.set_title('Resampled and filtered')
+                # ax2.grid()
+                # mng = plt.get_current_fig_manager()
+                # mng.resize(*mng.window.maxsize())
+                # plt.show()
+                # # ***
+
                 # store data for plotting if flagged
-                if disp_g:
+                if disps_f or saves_f:
                     # create a dictionary of relevant study factors
                     std_fct = {}
                     std_fct['subj'] = scode
@@ -162,7 +196,7 @@ for root, dirs, files in os.walk(seshd):
                     plt_lst.append([[cop_dat, std_fct]])
 
 # Plot stabilograms (see Scoppa2013) if flagged
-if disp_g:
+if disps_f or saves_f:
     ax.axis([-BB_X/2, BB_X/2, -BB_Y/2, BB_Y/2])
     ax.grid()
     plot1 = True
@@ -178,19 +212,22 @@ if disp_g:
         # get factors string
         fct_str = ""
         for ib in fct_lst:
-            fct_str = fct_str + ib + ": " + ia[0][1][ib]+", "
+            fct_str = fct_str + ib + ": " + ia[0][1][ib] + ", "
         fct_str = fct_str.rstrip(", ")
         txt_h = plt.text(-200,100,fct_str, fontsize=14)
-        plt.show()
-        plt.pause(0.5)
+        if disps_f:
+            plt.show()
+            plt.pause(0.5)
+        if saves_f:
+            # create file name
+            im_file = ".png"
+            for ib in fct_lst:
+                im_file = ia[0][1][ib] + im_file
+            im_file = "subj" + ia[0][1]['subj'] + "_" + im_file
+            plt.savefig(os.path.join(imdir,im_file))
         txt_h.remove()
 
-# # TEST
-# for tst in plt_lst:
-#     print(type(tst[0][0]))
-#     input('next...')
-# print(cop_df.sort_values(['subj','side','trials']))
-# #
+
 # create results directory if it doesn't exist
 res_dir = os.path.join(seshd,'results')
 if not(os.path.isdir(res_dir)):
