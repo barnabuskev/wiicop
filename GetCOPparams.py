@@ -159,7 +159,7 @@ for root, dirs, files in os.walk(seshd):
                 # add time data to cop data
                 cop_dat = np.concatenate((pkl['cop'],t_dat), axis=1)
 
-                # Calculate COP parameters...
+                # Preprocess COP data
                 # resample to even sample points
                 cop_dat_r = cp.resamp(cop_dat)
                 # low pass filtering
@@ -183,6 +183,12 @@ for root, dirs, files in os.walk(seshd):
                 # mng.resize(*mng.window.maxsize())
                 # plt.show()
                 # # ***
+
+                # Get COP parameters...
+                # 95% Prediction interval
+                cop_df.ix[nxt_cop,'pred_ellipse'] = cp.PI95(cop_dat_f)
+                # path length
+                #cop_df.ix[nxt_cop,'path_length'] = 
 
                 # store data for plotting if flagged
                 if disps_f or saves_f:

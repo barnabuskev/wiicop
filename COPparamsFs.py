@@ -47,9 +47,18 @@ def resamp(cop_dat):
     return np.concatenate((cor,sag,t),axis=1)
 
 def bfilt(cop_dat, cutoff, order):
+    # Butterworth filter
     b,a = signal.butter(order, cutoff)
     # filter coronal
     cor_lp = signal.filtfilt(b, a, cop_dat[:,0])
     # filter sagittal
     sag_lp = signal.filtfilt(b, a, cop_dat[:,1])
     return np.concatenate((to_sing(cor_lp),to_sing(sag_lp),to_sing(cop_dat[:,2])),axis=1)
+
+def pathl(cop_dat):
+    # to calculate COP path length
+    delt = np.diff(cop_dat[:,(0,1)], axis = 0)
+    sqs = np.square(delt)
+    sum_s = np.add(sqs[:,0],sqs[:,1])
+    lgths = np.sqrt(sum_s)
+    return np.sum(lgths)
