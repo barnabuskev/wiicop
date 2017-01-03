@@ -33,7 +33,7 @@ cal_re = "calib.*dat"
 # set regular expression to find cop data file
 cop_re = "subj.*.dat"
 # specify list of cop parameters
-cop_params = ['pred_ellipse','path_length']
+cop_params = ['pred_ellipse','path_length','velocity']
 # string that signifies subject code
 sbjstr = 'subj'
 # Display stabilogram flag
@@ -188,7 +188,10 @@ for root, dirs, files in os.walk(seshd):
                 # 95% Prediction interval
                 cop_df.ix[nxt_cop,'pred_ellipse'] = cp.PI95(cop_dat_f)
                 # path length
-                #cop_df.ix[nxt_cop,'path_length'] = 
+                pl = cp.pathl(cop_dat)
+                cop_df.ix[nxt_cop,'path_length'] = pl
+                # velocity
+                cop_df.ix[nxt_cop,'velocity'] = pl/int(cop_df.ix[nxt_cop,'acq_time'])
 
                 # store data for plotting if flagged
                 if disps_f or saves_f:
@@ -238,6 +241,9 @@ if disps_f or saves_f:
 res_dir = os.path.join(seshd,'results')
 if not(os.path.isdir(res_dir)):
     os.mkdir(res_dir)
-# write results
-calib_file = os.path.join(res_dir,'calib_file.csv')
+# write calibration results
+calib_file = os.path.join(res_dir,'calib_results.csv')
 cal_df.to_csv(calib_file)
+# write study results
+study_file = os.path.join(res_dir,'study_results.csv')
+cop_df.to_csv(study_file)
