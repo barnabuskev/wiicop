@@ -24,8 +24,6 @@ import COPparamsFs as cp
 # %matplotlib inline
 
 
-# TEMP**
-os.chdir("/home/kevin/Documents/Work/BSO/BSOEquip/WiiBalBoard/")
 
 # INITIALISE
 # set regular expression to find calibration file
@@ -71,8 +69,14 @@ cop_re_o = re.compile(cop_re)
 
 # create empty pandas dataframes to store calibration and cop data
 cal_df=pd.DataFrame(columns=['session','sensor','slope','slope.se','r.coef','p-val'])
+# change to $XDG_RUNTIME_DIR/gvfs where samba mounts its shares
+gvfs_pth = os.environ['XDG_RUNTIME_DIR']+'/gvfs/'
+os.chdir(os.path.dirname(gvfs_pth))
 # Get user to choose config file
 config_file = tk_fd.askopenfilename(title = 'Get config file for study',filetypes=[('Data files', '*.config'), ('All files','*')])
+# move to directory above config file
+os.chdir(os.path.dirname(config_file))
+os.chdir("..")
 # read selected config file
 config = configparser.ConfigParser()
 config.read(config_file)
