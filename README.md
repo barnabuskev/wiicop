@@ -21,7 +21,7 @@ Python 3 software for obtaining centre of pressure data from the Nintendo Wii bo
 5. Compile and install xwiimote library.
 Change (cd) to xwiimote directory, then run:
 
-    sudo ./autogen
+    sudo ./autogen.sh
     
     sudo ./configure
     
@@ -50,9 +50,9 @@ Change (cd) to xwiimote directory, then run:
 
     and follow instructions.
 
-8. Complile and install xwiimote python bindings. Change (cd) to xwiimote-bindings directory and run following:
+8. Compile and install xwiimote python bindings. Change (cd) to xwiimote-bindings directory and run following:
 
-    sudo ./autogen
+    sudo ./autogen.sh
     
     sudo ./configure PYTHON=/usr/bin/python3
     
@@ -74,6 +74,16 @@ Change (cd) to xwiimote directory, then run:
 11. In same directory create a directory called config_files to put study configuration files for each study. These need to be amended – see below.
 
 12. Create a study directory and a sub directory for each study. Amend config file for each study to point to the right directory
+
+
+NOTES:
+    In Linux Mint 18 Cinnamon edition the default bluetooth (Blueberry) tool doesn't seem to work. Uninstalling it and installing Blueman seems to work:
+    
+    sudo apt-get remove --purge blueberry
+    sudo apt-get install blueman
+    
+Then reboot
+    
 
 
 
