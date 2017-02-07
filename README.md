@@ -69,7 +69,7 @@ Change (cd) to xwiimote directory (xwiimote-master), then run:
 
 10. Create a directory to put the wiiboard software into, e.g. ~/Wiiboard. Copy wiicop.py and WiiCopFunctions.py into this directory. Then add this directory to your python path by adding this line to your ~/.bashrc file:
 
-    `export PYTHONPATH=$PYTHONPATH:home/yourusername/path/to/wiicopdir`
+    `export PYTHONPATH="$PYTHONPATH:home/yourusername/path/to/wiicopdir"`
 
 11. In same directory create a directory called config_files to put study configuration files for each study. These need to be amended – see below.
 
