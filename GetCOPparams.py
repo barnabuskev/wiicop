@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 # software to convert raw centre of pressure (COP) data into various COP based measures of balance
 
-
-# TO DO
-# ask user to choose directory
-# read all files matching a glob expression e.g. *.dat
-# read in and unpickle the data
-
-
 # IMPORTS
 # ~~~~~~~
 import tkinter.filedialog as tk_fd
