@@ -7,8 +7,8 @@ import select
 import sys
 import os
 import numpy as np
-from tkinter import *
-from tkinter import font
+import tkinter as tk
+import tkinter.font as font
 import string
 
 # function to test if string is a valid subject code
@@ -123,7 +123,7 @@ def procBBdata(bb, func, *args):
     p.unregister(bbdev.get_fd())
     return sens_dat
 
-# function to calibrate data and calculate COP
+# function to calculate COP
 def calcCOP(indat,cal_mod,BB_X, BB_Y):
     # inputs: 'indat' a 1 X N_S numpy array of sensor measurements
     # 'cal_mod': a 2 X N_S numpy array, 1st row are scale values, 2nd row are offsets
@@ -188,9 +188,6 @@ def listdirs(strt_dir):
 def get_sessionname(prev_lst,def_name):
     # function to take list of previous session names and a default name for new
     # session and return users choice of new session name
-    # requires:
-    # from tkinter import *
-    # from tkinter import font
     # INITIALISE parameters
     # background colour
     bcol = 'linen'
@@ -225,10 +222,10 @@ def get_sessionname(prev_lst,def_name):
         return False
     # CREATE window
     # create root
-    root = Tk()
+    root = tk.Tk()
     # flag to indicate choice has been made (i.e. window not closed). Must use
     # tkinter varables as can't use python global vars. These must be created after 'root = Tk()'
-    usr_chose = BooleanVar()
+    usr_chose = tk.BooleanVar()
     usr_chose.set(False)
     # set title of dialogue
     root.title(wnd_tit)
@@ -237,7 +234,7 @@ def get_sessionname(prev_lst,def_name):
     # set font size for widgets
     customFont = font.Font(size=f_sz)
     # create listbox
-    lbox = Listbox(root, height=lst_hgt, font=customFont, bg=bcol)
+    lbox = tk.Listbox(root, height=lst_hgt, font=customFont, bg=bcol)
     # populate listbox
     cnt = 1
     for i_lst in prev_lst:
@@ -248,21 +245,21 @@ def get_sessionname(prev_lst,def_name):
     # bind listbox to double click to call old2new
     lbox.bind("<Double-Button-1>",old2new)
     # label for listbox
-    lbox_lab = Label(root, text = 'Previous sessions', font=customFont)
+    lbox_lab = tk.Label(root, text = 'Previous sessions', font=customFont)
     # create string var for entry box with default name
-    s_name = StringVar()
+    s_name = tk.StringVar()
     s_name.set(def_name)
     # Entry box to get name of session
     # TO DO validate entry here
-    ent = Entry(root, font=customFont, textvariable=s_name, bg=bcol)
+    ent = tk.Entry(root, font=customFont, textvariable=s_name, bg=bcol)
     # set focus to entry box
     ent.focus_set()
     # bind entry box widget to return keypress
     ent.bind("<Return>",name_ent)
     # label for entry box
-    ebox_lab = Label(root, text = 'New session', font=customFont)
+    ebox_lab = tk.Label(root, text = 'New session', font=customFont)
     # ok button to record entry
-    butt = Button(root, font=customFont, text = 'OK', command=click_ok)
+    butt = tk.Button(root, font=customFont, text = 'OK', command=click_ok)
     # assemble widgets
     lbox_lab.pack(pady=(5,0))
     lbox.pack(padx=(15))

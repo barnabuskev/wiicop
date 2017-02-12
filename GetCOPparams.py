@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import COPparamsFs as cp
 # %matplotlib inline
-
+#import pdb; pdb.set_trace()
 
 
 # INITIALISE
@@ -30,7 +30,7 @@ sbjstr = 'subj'
 # Display stabilogram flag
 disps_f = False
 # Save stabilogram flag
-saves_f = False
+saves_f = True
 # name of image directory
 imdir = "stabilograms"
 # Balance board dimensions width and length in mm (Leach, J.M., Mancini, M., Peterka, R.J., Hayes,
@@ -53,8 +53,6 @@ if disps_f or saves_f:
     # create figure and axis
     fig,ax = plt.subplots(1)
     fig.canvas.set_window_title('Stabilogram')
-if saves_f:
-    os.mkdir(imdir)
 
 # setup regular expression objects
 cal_re_o = re.compile(cal_re)
@@ -63,8 +61,8 @@ cop_re_o = re.compile(cop_re)
 # create empty pandas dataframes to store calibration and cop data
 cal_df=pd.DataFrame(columns=['session','sensor','slope','slope.se','r.coef','p-val'])
 # change to $XDG_RUNTIME_DIR/gvfs where samba mounts its shares
-gvfs_pth = os.environ['XDG_RUNTIME_DIR']+'/gvfs/'
-os.chdir(os.path.dirname(gvfs_pth))
+# gvfs_pth = os.environ['XDG_RUNTIME_DIR']+'/gvfs/'
+# os.chdir(os.path.dirname(gvfs_pth))
 # Get user to choose config file
 config_file = tk_fd.askopenfilename(title = 'Get config file for study',filetypes=[('Data files', '*.config'), ('All files','*')])
 # move to directory above config file
@@ -188,6 +186,7 @@ for root, dirs, files in os.walk(seshd):
                 pl = cp.pathl(cop_dat)
                 cop_df.ix[nxt_cop,'path_length'] = pl
                 # velocity
+                import pdb; pdb.set_trace()
                 cop_df.ix[nxt_cop,'velocity'] = pl/int(cop_df.ix[nxt_cop,'acq_time'])
 
                 # store data for plotting if flagged
@@ -203,6 +202,11 @@ for root, dirs, files in os.walk(seshd):
 
 # Plot stabilograms (see Scoppa2013) if flagged
 if disps_f or saves_f:
+    if saves_f:
+        # create image directory if it doesn't exist in current working directory
+        imdirpth = os.path.join(os.getcwd(),imdir)
+        if not(os.path.isdir(imdirpth)):
+            os.mkdir(imdirpth)
     ax.axis([-BB_X/2, BB_X/2, -BB_Y/2, BB_Y/2])
     ax.grid()
     plot1 = True
@@ -230,7 +234,7 @@ if disps_f or saves_f:
             for ib in fct_lst:
                 im_file = ia[0][1][ib] + im_file
             im_file = "subj" + ia[0][1]['subj'] + "_" + im_file
-            plt.savefig(os.path.join(imdir,im_file))
+            plt.savefig(os.path.join(os.getcwd(),imdir,im_file))
         txt_h.remove()
 
 
