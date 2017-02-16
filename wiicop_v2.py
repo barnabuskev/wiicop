@@ -67,13 +67,6 @@ def aqc_name(acq_info):
         afn = afn+'_'+acqt
     return afn
 
-def save_bbdat(self):
-    # to save cop data
-    # get save file name...
-    sfn = self.aqc_name()+'.dat'
-    sfn = os.path.join(self.sesh_path,sfn)
-    with open(sfn,'wb') as fptr:
-        pickle.dump(bbdat,fptr)
 
 # CLASS DEFINITIONS
 # create a class based on threading.thread
@@ -389,11 +382,16 @@ while loop_flag:
         acq_data = np.vstack((acq_data,wii_q.get()))
     # convert 3rd (secs) & 4th (microsecs) col to 1 col of secs
     acq_data[:,2] = acq_data[:,2] + acq_data[:,3]/1000000
-    acq_data = np.delete(acq_data,3,1)
     # convert to pandas dataframe
-    acq_dat_df = pd.DataFrame(data=acq_data,columns=('copx','copy','time'))
-    # write to file
-
+    acq_dat_df = pd.DataFrame(data=acq_data[:,(0,1,2)],columns=('copx','copy','time'))
+    # subtract the time of the first reading from the others - start a time=o
+    acq_dat_df['time'] = acq_dat_df['time'] - acq_dat_df.ix[0,'time']
+    # write to file...
+    # get save file name...
+    sfn = aqc_name(acq_info)+'.csv'
+    sfn = os.path.join(sesh_path,sfn)
+    print(sfn)
+    acq_dat_df.to_csv(sfn,index=False)
 
     # ask user if they wish to do another acquisition
     chc = input('Get another acquisition? (y/n)\n')
