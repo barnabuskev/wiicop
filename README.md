@@ -1,6 +1,10 @@
 # wiicop.py
 
-Python 3 software for obtaining centre of pressure data from the Nintendo Wii board. Works on linux computers only. Also obtains subject code and experiment factors such as group (case/control), acquisition time etc. This is used by students and researchers at the British School of Osteopathy, London [website](http://www.bso.ac.uk/).
+Python 3 software for obtaining centre of pressure (cop) data from the Nintendo Wii board. Works on linux computers only. Also obtains subject code and experiment factors such as group (case/control), acquisition time etc. This is used by students and researchers at the British School of Osteopathy, London [website](http://www.bso.ac.uk/).
+
+#UPDATE
+
+New version of `wiicop.py` increases the sample rate (on a Intel Pentium P6200 dual core 2.13GHz) of 10Hz to around 65Hz. It also saves the data in a CSV file instead of a python data file. The CSV file has three columns: cop x value (coronal plane), cop y value (sagittal plane), and time (seconds). It also updates the cop screen display to 20Hz. This makes it achieve the sample rate standards recommended by Scoppa et al (Scoppa, F.; Capra, R.; Gallamini, M. & Shiffer, R. Clinical stabilometry standardization: basic definitions-acquisition interval-sampling frequency Gait & posture, Elsevier, 2013, 37, 290-292). This means that `GetCOPparams.py` will need ammending to work with the new data files.
 
 #HOW TO USE
 1. Follow all the install instructions below
