@@ -64,7 +64,9 @@ def aqc_name(acq_info):
     for iks in tmp.values():
         afn = afn+'_'+iks
     if acqt!='inf':
-        afn = afn+'_'+acqt
+        afn = afn+'_t'+acqt
+    else:
+        afn = afn+'_tmanual'
     return afn
 
 
