@@ -45,7 +45,7 @@ New version of `wiicop.py` increases the sample rate (on a Intel Pentium P6200 d
 
 3. Install the following dependencies (ubuntu based distributions) via:
 
-    `sudo apt-get install libudev-dev libncurses5-dev libncursesw5-dev autoconf autogen libtool swig python3-dev python3-tk python3-pip`
+    `sudo apt-get install libudev-dev libncurses5-dev libncursesw5-dev automake autoconf autogen libtool swig python3-dev python3-tk python3-pip`
 
 4. Install python modules:
 
