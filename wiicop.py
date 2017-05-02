@@ -10,6 +10,8 @@ from queue import Queue
 import errno
 import numpy as np
 import pandas as pd
+import pickle
+from scipy import stats
 import pyudev
 import xwiimote
 import select
@@ -31,7 +33,7 @@ out_thresh = 3
 maxpcnt = 5
 # Pandas series to define calibration weights
 # calib_wgts = pd.Series({0:5,1:10,2:18})
-calib_wgts = pd.Series({0:5,1:9,2:16.5})
+calib_wgts = pd.Series({0:8,1:12,2:16})
 # calibration units ('Kgs' or 'lbs')
 # calib_units = 'lbs'
 calib_units = 'Kgs'
@@ -284,72 +286,72 @@ sesh_path = os.path.join(std_dir,s_dir_nm)
 os.mkdir(sesh_path,mode=0o775)
 
 
-# # CALIBRATE BOARD
-# # ~~~~~~~~~~~~~~~
-# # preallocate array for mean of sensor readings for each calibration weight
-# n_calib = len(calib_wgts)
-# sens_mean = np.empty([N_S,n_calib])
-# print('\n\nStarting calibration sequence...\nApply weights as close as possible to the centre...\n')
-# for i_ws in range(n_calib):
-#     print('Apply',str(calib_wgts[i_ws]),calib_units,'to balance board\n')
-#     input_str = input('Press return when ready...\n\n')
-#     # read data
-#     sens_dat = procBBdata(bb, getnsamp, smp_size)
-#     # print(sens_dat)
-#     # for each sensor...
-#     for i_s in range(N_S):
-#         sens_dat1 = sens_dat[:,i_s]
-#         # print out percentage of readings == 0
-#         prctzero = sum(sens_dat1==0)/smp_size*100
-#         if prctzero > 0:
-#             print('Warning: percentage zeros for {0} sensor = {1:.2f}%'.format(SENS_DCT[i_s],prctzero))
-#         # detect if all values are for sensor are zero
-#         if prctzero > maxpcnt:
-#             print('Error: percentage zeros for {0} sensor exceeds maximum ({1:.2f}%).'.format(SENS_DCT[i_s],prctzero))
-#             print('Use heavier weight or move board to another location.')
-#             print('Exiting')
-#             time.sleep(5)
-#             sys.exit()
-#         else:
-#             # get zscores for sensor
-#             zscrs = stats.zscore(sens_dat1)
-#             # replace those outside threshold with nans
-#             sens_dat1[np.absolute(zscrs) > out_thresh] = np.nan
-#             # get mean excluding nans.
-#             sens_mean[i_s,i_ws] = np.nanmean(sens_dat1)
-#
-# # For each sensor get a linear model to calibrate data...
-# # create dictionary to store results to file and array for model parameters
-# # 'm'-slopes,'c'-intercepts, 'p'-p-values, 'r'- r values, 'se' -standard errors
-# # cal_mod row zero = slopes, row 1 = intercepts. Each col represents a sensor
-# # Calibration weights are divided by number of sensors
-# cal_mod = np.empty([2,N_S])
-# cal_dat = dict()
-# dc = dict()
-# for i_s in range(N_S):
-#     cal_m, cal_c, cal_r, cal_p, cal_se = stats.linregress(sens_mean[i_s,:],calib_wgts.values/N_S)
-#
-#     # store results to dictionary
-#     dc.update({'m':cal_m})
-#     dc.update({'c':cal_c})
-#     dc.update({'r':cal_r})
-#     dc.update({'p':cal_p})
-#     dc.update({'se':cal_se})
-#
-#     # store model parameters to an array
-#     cal_mod[0,i_s] = cal_m
-#     cal_mod[1,i_s] = cal_c
-#     cal_dat.update({SENS_DCT[i_s]:dc})
-#
-# # save calibration data in session directory
-# calib_dat = {'model':cal_mod, 'details':cal_dat}
-# cfn = os.path.join(sesh_path,'calibration_dat')
-# with open(cfn,'wb') as fptr:
-#     pickle.dump(calib_dat,fptr)
-# print('Remove calibration weights from balance board\n\n')
+# CALIBRATE BOARD
+# ~~~~~~~~~~~~~~~
+# preallocate array for mean of sensor readings for each calibration weight
+n_calib = len(calib_wgts)
+sens_mean = np.empty([N_S,n_calib])
+print('\n\nStarting calibration sequence...\nApply weights as close as possible to the centre...\n')
+for i_ws in range(n_calib):
+    print('Apply',str(calib_wgts[i_ws]),calib_units,'to balance board\n')
+    input_str = input('Press return when ready...\n\n')
+    # read data
+    sens_dat = procBBdata(bb, getnsamp, smp_size)
+    # print(sens_dat)
+    # for each sensor...
+    for i_s in range(N_S):
+        sens_dat1 = sens_dat[:,i_s]
+        # print out percentage of readings == 0
+        prctzero = sum(sens_dat1==0)/smp_size*100
+        if prctzero > 0:
+            print('Warning: percentage zeros for {0} sensor = {1:.2f}%'.format(SENS_DCT[i_s],prctzero))
+        # detect if all values are for sensor are zero
+        if prctzero > maxpcnt:
+            print('Error: percentage zeros for {0} sensor exceeds maximum ({1:.2f}%).'.format(SENS_DCT[i_s],prctzero))
+            print('Use heavier weight or move board to another location.')
+            print('Exiting')
+            time.sleep(5)
+            sys.exit()
+        else:
+            # get zscores for sensor
+            zscrs = stats.zscore(sens_dat1)
+            # replace those outside threshold with nans
+            sens_dat1[np.absolute(zscrs) > out_thresh] = np.nan
+            # get mean excluding nans.
+            sens_mean[i_s,i_ws] = np.nanmean(sens_dat1)
 
-#TEST overide calibration
-cal_mod = np.array([[0.01776906,0.01645395,0.02366412,0.02252513],[ 0.39208467,-0.7261971,-0.05245845,-3.55288195]])
+# For each sensor get a linear model to calibrate data...
+# create dictionary to store results to file and array for model parameters
+# 'm'-slopes,'c'-intercepts, 'p'-p-values, 'r'- r values, 'se' -standard errors
+# cal_mod row zero = slopes, row 1 = intercepts. Each col represents a sensor
+# Calibration weights are divided by number of sensors
+cal_mod = np.empty([2,N_S])
+cal_dat = dict()
+dc = dict()
+for i_s in range(N_S):
+    cal_m, cal_c, cal_r, cal_p, cal_se = stats.linregress(sens_mean[i_s,:],calib_wgts.values/N_S)
+
+    # store results to dictionary
+    dc.update({'m':cal_m})
+    dc.update({'c':cal_c})
+    dc.update({'r':cal_r})
+    dc.update({'p':cal_p})
+    dc.update({'se':cal_se})
+
+    # store model parameters to an array
+    cal_mod[0,i_s] = cal_m
+    cal_mod[1,i_s] = cal_c
+    cal_dat.update({SENS_DCT[i_s]:dc})
+
+# save calibration data in session directory
+calib_dat = {'model':cal_mod, 'details':cal_dat}
+cfn = os.path.join(sesh_path,'calibration_dat')
+with open(cfn,'wb') as fptr:
+    pickle.dump(calib_dat,fptr)
+print('Remove calibration weights from balance board\n\n')
+
+# #TEST overide calibration
+# cal_mod = np.array([[0.01776906,0.01645395,0.02366412,0.02252513],[ 0.39208467,-0.7261971,-0.05245845,-3.55288195]])
 
 # GET SERIES OF ACQUISITIONS
 loop_flag = True
